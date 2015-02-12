@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>My first Three.js app</title>
+<style>
+body {
+	margin: 0
+}
+
+canvas {
+	width: 100% height:  100%
+}
+
+div#fps {
+	position: fixed;
+color: red;
+}
+</style>
+</head>
+<body>
+<div id="fps">0 fps</div>
+<script src="../js/three.min.js"></script>
+<script> 
+var scene = new THREE.Scene()
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 )
+var renderer = new THREE.WebGLRenderer()
+
+renderer.setSize( window.innerWidth, window.innerHeight )
+document.body.appendChild( renderer.domElement )
+var cubeGgeometry = new THREE.BoxGeometry( 1, 1, 1 )
+
+var cylinderGeometry = new THREE.CylinderGeometry( 1, 1, 1, 32 );
+var circleGeometry =  new THREE.CircleGeometry( 1, 16);	
+
+var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
+
+var cube = new THREE.Mesh( cubeGgeometry, material )
+var cube2 = new THREE.Mesh( cubeGgeometry, new THREE.MeshBasicMaterial( { color: 0xffff00 } ) )
+var cylinder = new THREE.Mesh( cylinderGeometry, new THREE.MeshBasicMaterial( { color: 0x00fffff} ) )
+var circle = new THREE.Mesh( circleGeometry, new THREE.MeshBasicMaterial( { color: 0x00ff00 } ) )  
+var torus = createTorus()
+scene.add( cube )
+scene.add( cube2 )
+scene.add( cylinder )
+scene.add( circle )
+scene.add( torus )
+
+camera.position.z = 10
+
+var initialtime = new Date().getTime()
+var frameCounter = 0
+
+var render = function () { 
+	requestAnimationFrame( render )
+
+	if(frameCounter++ % 60) {
+		document.getElementById("fps").innerHTML = "Frames per second: " + (frameCounter/ (new Date().getTime() - initialtime) * 1000)
+	}
+
+	cube.rotation.x += 0.01
+
+	cube2.position.x += 0.001
+	cube2.position.y += 0.001
+	cube2.position.z += 0.001
+
+	cylinder.position.y += 0.001
+	circle.position.y -= 0.001
+	circle.position.x -= 0.001
+	circle.rotation.x -= 0.1
+
+	torus.rotation.x += 0.03
+	torus.rotation.y += 0.03
+	
+	renderer.render(scene, camera)
+	
+	scene.rotation.y +=0.1
+
+	camera.position
+}
+
+function createTorus() {
+	var geometry = new THREE.TorusKnotGeometry( 0.5, 0.1, 100, 16 ); 
+	var material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+	var torus = new THREE.Mesh( geometry, material );
+	
+	torus.position.x = 3;
+	torus.position.y = -3;
+	return   torus
+}
+
+render()
+</script>
+</body>
+</html>
