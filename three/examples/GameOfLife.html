@@ -13,22 +13,25 @@ canvas {
 </style>
 </head>
 <body>
-<script src="../js/three.min.js"></script>
+<script src="../js/three/three.min.js"></script>
+<script src="../js/three/OrbitControls.js"></script>
+
 <script src="../js/GameOfLife.js"></script>
 <script src="../js/Table.js"></script>
 
 <script> 
-    var rows = 100;
-    var files = 100;
-    var nextStateTimeout = 100;
+    var rows = 100
+    var files = rows
+    var nextStateTimeout = 100
     
     var scene = new THREE.Scene()
-    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 )
+    var camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 )
     var renderer = new THREE.WebGLRenderer()
+    var controls = new THREE.OrbitControls( camera );
     
     var table = new Table(files,rows, scene)
     var gameOfLife = new GameOfLife(files, rows)
-    
+        
     init()
     
     function init() {
@@ -37,7 +40,29 @@ canvas {
         camera.position.y = Math.round(files / 2)
         camera.position.x = Math.round(files / 2)
         camera.position.z = files
+        
+        initLights()
+        
+        animate()    
         render()
+    }
+    
+    function initLights() { 
+        light = new THREE.DirectionalLight( 0xffffff );
+        light.position.set( 1, 1, 1 );
+        scene.add( light );
+    
+        light = new THREE.DirectionalLight( 0x002288 );
+        light.position.set( -1, -1, -1 );
+        scene.add( light );
+    
+        light = new THREE.AmbientLight( 0x222222 );
+        scene.add( light );
+    }
+    
+    function animate() {
+        requestAnimationFrame( animate );
+        controls.update();
     }
     
     function render() { 
@@ -45,7 +70,6 @@ canvas {
             requestAnimationFrame( render )
         }, nextStateTimeout)
         renderer.render(scene, camera)
-        
         table.updateCells(gameOfLife.calculateNextState())    
     }
     

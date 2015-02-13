@@ -1,7 +1,8 @@
 function Table(files, rows, scenario) {
     var cells = []
     var cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 )
-    var material = new THREE.MeshBasicMaterial( { color: 0xffffff } )
+    //var material = new THREE.MeshBasicMaterial( { color: 0xffffff } )
+    var material = new THREE.MeshLambertMaterial( { color:0xffffff, shading: THREE.FlatShading } );
     
     var self = this
 
@@ -29,8 +30,12 @@ function Table(files, rows, scenario) {
 
     function buildCell(file, row) {
         var cell = new THREE.Mesh( cubeGeometry, material ) 
-        cell.position.x = file
-        cell.position.y = row 
+        cell.position.x = calculateCenterCoords(file, files)
+        cell.position.y = calculateCenterCoords(row, rows) 
         return cell
+    }
+    
+    function calculateCenterCoords(value, maxValue) {
+    	return value - maxValue/2
     }
 }
