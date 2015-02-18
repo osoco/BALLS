@@ -4,10 +4,8 @@ function Table(files, rows, scenario) {
     //var material = new THREE.MeshBasicMaterial( { color: 0xffffff } )
     var material = new THREE.MeshLambertMaterial( { color:0xffffff, shading: THREE.FlatShading } );
     
-    var self = this
+    var that = this
 
-    init()
-    
     this.updateCells = function(table) {
         for(var i = 0; i < files; i++) {
             for(var j = 0; j < rows; j++) {
@@ -15,6 +13,17 @@ function Table(files, rows, scenario) {
             }
          }
     }
+    
+    this.getCells = function() {
+    	return cells
+    }
+    
+    this.updateCellPosition = function(cell, file, row) {
+    	cell.position.x = calculateCenterCoords(file, files)
+        cell.position.z = calculateCenterCoords(row, rows)
+    }
+    
+    init()
     
     function init() {
          for(var i = 0; i < files; i++) {
@@ -29,9 +38,8 @@ function Table(files, rows, scenario) {
     }
 
     function buildCell(file, row) {
-        var cell = new THREE.Mesh( cubeGeometry, material ) 
-        cell.position.x = calculateCenterCoords(file, files)
-        cell.position.y = calculateCenterCoords(row, rows) 
+        var cell = new THREE.Mesh( cubeGeometry, material )
+        that.updateCellPosition(cell, file, row)
         return cell
     }
     

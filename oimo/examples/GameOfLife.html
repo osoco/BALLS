@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>3D game of life!</title>
+<style>
+body {
+    margin: 0
+}
+
+canvas {
+    width: 100% height:  100%
+}
+
+</style>
+</head>
+<body>
+<script src="../../three/js/three/three.min.js"></script>
+<script src="../../three/js/three/OrbitControls.js"></script>
+
+<script src="../../three/js/GameOfLife.js"></script>
+<script src="../../three/js/Table.js"></script>
+<script src="../../three/js/PhysicTable.js"></script>
+
+<script src='../js/oimo.js'></script>
+<script src='../js/threex.oimo.js'></script>
+
+<script> 
+    var rows = 15
+    var files = rows
+    var nextStateTimeout = 100
+    
+    var numOfTables = 3
+    var currentTableIndex = 0
+    
+    var scene = new THREE.Scene()
+    var camera  = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000)
+    
+    var renderer = new THREE.WebGLRenderer()
+    var controls = new THREE.OrbitControls( camera );
+    
+    var gameOfLife = new GameOfLife(files, rows)
+    var world   = new OIMO.World(1/120, 2, 8)
+    
+    var tables = []
+    var physicTables = []
+    
+    for(var i = 0; i < numOfTables; i++) {
+        tables.push(new Table(files,rows, scene))
+        physicTables.push(new PhysicTable(tables[i],world, 20))
+        
+        for(var j = 0; j <= i; j++ ) {
+            physicTables[i].moveUp()
+        }
+    }
+     
+    addGround()
+    
+    init()
+    
+    function init() {
+        renderer.setSize( window.innerWidth, window.innerHeight )
+        document.body.appendChild( renderer.domElement )
+        camera.position.y = Math.round(files / 2)
+        camera.position.x = Math.round(files / 2)
+        camera.position.z = rows*3
+        
+        initLights()
+        
+        setInterval(updateOimoPhysics, 1000/60);
+        
+        animate()    
+        render()
+    }
+    
+    function addGround() {
+	    var geometry    = new THREE.BoxGeometry(100,1,40);   
+	    var material    = new THREE.MeshNormalMaterial();
+	    var mesh    = new THREE.Mesh( geometry, material );
+	    mesh.visible = false
+	    mesh.position.y = -15
+	    scene.add(mesh)
+	    
+	    var ground  = THREEx.Oimo.createBodyFromMesh(world, mesh, {
+            move : false
+        })
+    }
+    
+    var times = 0
+    function updateOimoPhysics() {
+        world.step()
+        
+        for(var i=0 ; i < physicTables.length; i++) {
+            physicTables[i].update()
+        }
+        times++
+        if((times % 50) == 0) {
+            //physicTable.moveDown()
+        }
+    } 
+    
+    function initLights() { 
+        light = new THREE.DirectionalLight( 0xffffff );
+        light.position.set( 1, 1, 1 );
+        scene.add( light );
+    
+        light = new THREE.DirectionalLight( 0x002288 );
+        light.position.set( -1, -1, -1 );
+        scene.add( light );
+    
+        light = new THREE.AmbientLight( 0x222222 );
+        scene.add( light );
+    }
+    
+    function animate() {
+        requestAnimationFrame( animate );
+        controls.update();
+    }
+    
+    function render() { 
+        setTimeout(function() {
+            requestAnimationFrame( render )
+        }, nextStateTimeout)
+        renderer.render(scene, camera)
+        getCurrentTable().updateCells(gameOfLife.calculateNextState())
+        currentTableIndex = (currentTableIndex + 1) % numOfTables    
+    }
+    
+    function getCurrentPhysicTable() {
+        return physicTables[currentTableIndex]
+    }
+    
+    function getCurrentTable() {
+        return tables[currentTableIndex]
+    }
+</script>
+</body>
+</html>
