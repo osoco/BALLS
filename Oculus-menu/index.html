@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+  body {
+    margin: 0
+}
+
+canvas {
+    width: 100% height:  100%
+}
+  </style>
+  <title>Oculus Menu</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <link rel="stylesheet" href="css/lab.css"/>
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/OculusMenu.js"></script>
+<!--     <script src="js/navigation.js"></script> -->
+    
+    
+    <script src="js/vr/VRControls.js"></script>
+    <script src="js/vr/VREffect.js"></script>
+  
+</head>
+<body>
+
+ <div id='menu'></div>
+
+<script> 
+  
+    var cameraFOV = 60
+
+    var cameraAspectRatio = window.innerWidth / window.innerHeight
+
+    var cameraNearPlane = 0.1
+
+    var cameraFarPlane = 15000
+
+    camera = new THREE.PerspectiveCamera(cameraFOV, cameraAspectRatio, cameraNearPlane, cameraFarPlane)
+
+    var controls = new THREE.OrbitControls( camera );
+    camera.lookAt( new THREE.Vector3( 0, 0, 0 ) )        
+    camera.position.z = 2
+    scene = new THREE.Scene()
+
+
+    // object picking stuff
+    projector = new THREE.Projector()
+
+    raycaster = new THREE.Raycaster()
+
+    // renderer
+    renderer = new THREE.WebGLRenderer({precision: "mediump", antialias: true})
+
+    renderer.setSize(window.innerWidth, window.innerHeight)
+
+    renderer.autoClear = false
+
+    
+    onResize = function() {
+        camera.aspect = window.innerWidth / window.innerHeight
+
+        camera.updateProjectionMatrix()
+
+        renderer.setSize(window.innerWidth, window.innerHeight)
+
+      }
+
+      window.addEventListener('resize', onResize, false)
+
+      
+    container = document.getElementById("menu")
+
+    container.appendChild( renderer.domElement )
+
+    
+    
+    var cubeGgeometry = new THREE.BoxGeometry( 1, 1, 0.1 )
+    var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
+    var cube = new THREE.Mesh( cubeGgeometry, material )
+    var menuOptions = new THREE.Object3D()
+    scene.add(menuOptions)
+    addMenuOptions()
+    
+    var torus = createTorus()
+    scene.add(torus) 
+
+    
+ var raycaster = new THREE.Raycaster()
+ 
+    var threeMenu = new THREE.Menu(scene, camera, projector, raycaster)
+    
+ var center = new THREE.Vector2()
+ first = true
+    var rayTest = function () {
+        var vector = new THREE.Vector3( 0, 0, 1 );
+        projector.unprojectVector( vector, camera );
+        raycaster.set( camera.position, vector.sub(camera.position).normalize());
+        
+         // See if the ray from the camera into the world hits one of our meshes
+         var intersects = raycaster.intersectObjects( menuOptions.children);
+
+         if ( intersects.length > 0 ) {
+            var selectedObject = intersects[0].object
+            var currentTime = new Date().getTime()
+            selectedObject.startSelectionTime = selectedObject.startSelectionTime || currentTime   
+            
+            if(selectedObject.startSelectionTime && currentTime - selectedObject.startSelectionTime > 1000) {
+                intersects[0].object.material = menuOptions.children[0].selected2Material
+                if(first) {   
+                setTimeout(function() {
+                    translateCamera({x:100, y:100, z:100})
+                    setTimeout(function() {
+                        translateCamera({x:0, y:0, z:0})
+                        setTimeout(rotateMenu, 400)
+                    }, 3000)
+                    
+                }, 100)
+                first = false
+                }
+                
+            } else {
+               first = true
+                intersects[0].object.material = menuOptions.children[0].selectedMaterial
+            } 
+             
+         }
+         
+         // Toggle rotation bool for meshes that we clicked
+         for (var i = 0; i < menuOptions.children.length; i++) {
+            if(menuOptions.children[i] !== selectedObject) {
+                menuOptions.children[i].material = menuOptions.children[i].unselectedMaterial
+                menuOptions.children[i].startSelectionTime = 0
+            }
+         } 
+    }
+   
+ 
+
+function updateTorusPosition() {
+var vector = new THREE.Vector3( 0.0, 0.0, 1 );
+        projector.unprojectVector( vector, camera );
+        var direction = vector.sub(camera.position).normalize()
+        
+        
+        torus.position.x = camera.position.x + direction.x*5  
+        torus.position.y = camera.position.y + direction.y *5
+        torus.position.z = camera.position.z + direction.z *5
+        torus.rotation.x = camera.rotation.x
+        torus.rotation.y = camera.rotation.y
+        torus.rotation.z = camera.rotation.z
+        
+}
+
+
+  vrControls = new THREE.VRControls(camera);
+
+      vrEffect = new THREE.VREffect(renderer);
+      positions = [{x:0,y:0,z:0},{x:100,y:100,z:100}]
+      positionTimes = 0
+      onkey = function(event) {
+        if (event.key === 'z') {
+          vrControls.zeroSensor();
+        }
+        if (event.key === 'f') {
+          return vrEffect.setFullScreen(true);
+        }
+        if(event.key === 'a'){
+            translateCamera(positions[positionTimes++ % 2])
+            setTimeout(rotateMenu, 400)
+        }
+        if(event.key === 'r'){
+            rotateMenu()
+        }
+      };
+
+      window.addEventListener("keypress", onkey, true);
+      
+    loop()
+    
+    function loop() {
+        vrControls.update()
+        vrEffect.render(scene, camera)
+        //controls.update()
+        threeMenu.update()
+        rayTest()
+        
+        updateTorusPosition()
+        
+        requestAnimationFrame( loop )
+        //renderer.render( scene, camera )
+        //controls.update();
+        
+
+    }
+
+
+function addMenuOptions(options) {
+menu = {
+    children : []
+}
+
+ radious = 40
+ radiansDelta = Math.PI / 10
+
+
+    var menuCenter = new THREE.Vector3(0,0,0)
+    menu.center = menuCenter
+
+    var cubeGgeometry = new THREE.BoxGeometry( 10, 10, 1 )
+    var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
+    
+    for(var i = 0; i < 15; i++) {
+        var texture = new THREE.ImageUtils.loadTexture( 'img/Config.png' );
+        var imgGeometry = new THREE.PlaneGeometry(10,10);
+        var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, transparent: false, color: 0x00ff00 });
+        var mesh = new THREE.Mesh(imgGeometry, material);
+            
+        
+        menuOptions.add(mesh)
+        colocateMenu(mesh, radious, menuCenter,i, 0)
+        menu.currentRotation = 0
+        mesh.selectedMaterial = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, transparent: false, color: 0x00ffff });
+        mesh.selected2Material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, transparent: false, color: 0xff0000 });
+        mesh.unselectedMaterial = material
+        menu.children.push(mesh)
+        menu.centerRotation = radiansDelta * i/2
+    }
+}
+
+function colocateMenu(option, radious, center,i, initDelta) {
+    option.position.x = radious*Math.cos(radiansDelta*i + initDelta)
+    option.position.z = radious*Math.sin(radiansDelta*i + initDelta)
+    option.lookAt(center);    
+}
+
+function translateCamera(newPosition) {
+    var steps = 100;
+    deltax = (newPosition.x - camera.position.x) / steps
+    deltay = (newPosition.y - camera.position.y) / steps
+    deltaz = (newPosition.z - camera.position.z) / steps
+    
+    var animationTime = 600
+    var currentSteps = 0
+    updateCamera()
+    function updateCamera() {
+       camera.position.x += deltax
+       camera.position.y += deltay
+       camera.position.z += deltaz
+       if(currentSteps++ < steps) {
+           setTimeout(updateCamera, animationTime/ steps)
+       }
+    }
+}
+
+function rotateMenu() {
+    var steps = 40
+    var cameraRotationY = camera.rotation.y
+    var targetRotation = ( menu.centerRotation - menu.currentRotation ) % (Math.PI * 2)
+    var deltaY = ((targetRotation - cameraRotationY ) % (Math.PI * 2) ) / steps
+    
+    var animationTime = 600
+    var currentSteps = 0
+    updateMenu()
+    function updateMenu() {
+        menu.currentRotation +=  deltaY 
+        for (var i = 0; i < menu.children.length; i++) {
+            colocateMenu(menu.children[i], radious, menu.center,i,  menu.currentRotation)
+        }
+    
+       if(currentSteps++ < steps) {
+           setTimeout(updateMenu, animationTime/ steps)
+       }
+    }
+}
+
+ 
+function createTorus() {
+    
+        var radius = 0.25;
+        var tubeRadius = 0.1;
+        var radialSegments = 8 * 10;
+        var tubularSegments = 6 * 15;
+        var arc = Math.PI * 2;
+        var geometry = new THREE.TorusGeometry( radius, tubeRadius, radialSegments, tubularSegments, arc );
+    var material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+    var torus = new THREE.Mesh( geometry, material );
+    
+    torus.position.x = 3;
+    torus.position.y = -3;
+    return   torus
+}
+    
+</script>
+</body>
+</html>
