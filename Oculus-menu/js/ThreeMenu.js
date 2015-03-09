@@ -156,11 +156,13 @@ Object.prototype.extend = function(otherObject) {
 		var ROTATE_MENU_STEPS = 40
 		var MENU_ROTATION_ANIMATION_TIME = 600
 
+		var STARS_NUMBER = 10000
 		var viewCenter = createViewCenter()
 
 		init()
 		function init() {
 			camera.quaternion.y = 0.99
+			drawStars()
 		}
 		
 		function createViewCenter() {
@@ -173,6 +175,21 @@ Object.prototype.extend = function(otherObject) {
 			return torus
 		}
 
+		function drawStars() {
+			var geometry = new THREE.Geometry();
+
+            for ( var i = 0; i < STARS_NUMBER; i ++ ) {
+            	var vertex = new THREE.Vector3();
+                vertex.x = THREE.Math.randFloatSpread( 2000 );
+                vertex.y = THREE.Math.randFloatSpread( 2000 );
+                vertex.z = THREE.Math.randFloatSpread( 2000 );
+                geometry.vertices.push( vertex );
+            }
+
+            var particles = new THREE.PointCloud( geometry, new THREE.PointCloudMaterial( { color: 0x888888 } ) );
+            scene.add( particles );
+		}
+		
 		this.updateMenu = function(menu, preSelectedMenuItem, preSelectedMenuItemMesh) {
 			if(preSelectedMenuItem) {
 				if(preSelectedMenuItem.isSelected) {
@@ -209,8 +226,8 @@ Object.prototype.extend = function(otherObject) {
 				threeMenu.add(menuItemMesh)
 			})
 			
-			menu.centerRotation = (MENU_ITEM_ROTATION_DELTA * (menu.menuItems.length - 1)/2) 
-			this.colocateMenuMeshes(menu, 0)
+			menu.centerRotation = (MENU_ITEM_ROTATION_DELTA * (menu.menuItems.length - 1)/2)
+			this.colocateMenuMeshes(menu, 0, true)
 		}
 		
 		this.doWithMenuItemsMeshes = function(avoidedMenuItem, delegate) {
@@ -269,7 +286,7 @@ Object.prototype.extend = function(otherObject) {
 				camera.position.x += deltax
 				camera.position.y += deltay
 				camera.position.z += deltaz
-				if(currentSteps++ < TRANSLATE_CAMERA_STEPS) {
+				if(++currentSteps < TRANSLATE_CAMERA_STEPS) {
 					setTimeout(
 							function () {updateCamera(currentSteps)}, 
 							CAMERA_TRANSLATION_ANIMATION_TIME/ TRANSLATE_CAMERA_STEPS
@@ -295,10 +312,9 @@ Object.prototype.extend = function(otherObject) {
 			
 		
 		this.rotateMenu = function(menu) {
-			this.colocateMenuMeshes(menu, 0, true)
-			var targetRotation = menu.centerRotation
+			var targetRotation = menu.centerRotation + menu.currentRotation
 			var cameraRotationY = calculateRealCameraRotation(camera.quaternion, camera.rotation)
-			var deltaY = ((Math.PI * 2) - cameraRotationY - targetRotation) / ROTATE_MENU_STEPS
+			var deltaY = ((Math.PI * 2) - targetRotation - cameraRotationY) / ROTATE_MENU_STEPS
 			var that = this
 			updateMenu(0)
 			function updateMenu(currentSteps) {
